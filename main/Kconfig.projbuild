@@ -1,0 +1,23 @@
+menu "BioSecure"
+config BIOSECURE_DEVICE_ID
+    string "Device identifier"
+    default "BIOSECURE-UNPROVISIONED"
+config BIOSECURE_ATTENDANCE_URL
+    string "HTTPS attendance endpoint"
+    default "https://example.invalid/api/v1/attendance"
+config BIOSECURE_WIFI_SSID
+    string "Wi-Fi SSID (development only; provision NVS for production)"
+    default ""
+config BIOSECURE_WIFI_PASSWORD
+    string "Wi-Fi password (development only; provision NVS for production)"
+    default ""
+config BIOSECURE_DUPLICATE_WINDOW_MS
+    int "Duplicate suppression window"
+    default 45000
+config BIOSECURE_MAX_FAILED_ATTEMPTS
+    int "Failed attempts before lockout"
+    default 5
+config BIOSECURE_LOCKOUT_MS
+    int "Lockout duration"
+    default 60000
+endmenu
