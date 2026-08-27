@@ -1,0 +1,1 @@
+idf_component_register(SRCS "app_main.cpp" "system_controller.cpp" INCLUDE_DIRS "." REQUIRES core r307 platform storage networking display driver esp_wifi esp_http_client fatfs nvs_flash esp_event esp_timer)
