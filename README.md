@@ -193,4 +193,3 @@ machine-readable timings in a lab build without weakening privacy logging.
 
 
 
-For design decisions and interview discussion, see [the interview guide](docs/INTERVIEW_GUIDE.md).
