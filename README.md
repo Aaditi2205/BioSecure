@@ -191,5 +191,15 @@ machine-readable timings in a lab build without weakening privacy logging.
 15. Inspect SD, NVS, logs, API/database and packet traces: no images/features/templates.
 16. Measure every benchmark row and record board, firmware, sensor, network and sample count.
 
+## Current limitations and future work
 
+Physical ESP32/R307 integration and measured timing require hardware. The checked-in
+firmware includes task ownership/queue boundaries plus ESP-IDF UART, FATFS/SD,
+OLED, Wi-Fi/SNTP and certificate-bundle HTTPS adapters. Pins, credentials and the
+server URL are provisioned through project configuration and still require on-device validation.
+Commercial work includes secure boot/flash encryption, signed OTA, secure element,
+server-anchored audit hashes, supervised enrollment, PAD-capable multimodal hardware,
+privacy retention tooling and destructive/EMC/environmental testing.
+
+For design decisions and interview discussion, see [the interview guide](docs/INTERVIEW_GUIDE.md).
 
