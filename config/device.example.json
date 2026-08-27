@@ -1,0 +1,9 @@
+{
+  "device_id": "BIOSECURE-LAB-001",
+  "api_base_url": "https://attendance.example.invalid",
+  "ca_certificate_source": "ESP x509 certificate bundle",
+  "duplicate_window_ms": 45000,
+  "max_failed_attempts": 5,
+  "lockout_ms": 60000,
+  "uart_baud": 57600
+}
