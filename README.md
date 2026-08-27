@@ -202,4 +202,3 @@ server-anchored audit hashes, supervised enrollment, PAD-capable multimodal hard
 privacy retention tooling and destructive/EMC/environmental testing.
 
 For design decisions and interview discussion, see [the interview guide](docs/INTERVIEW_GUIDE.md).
-
