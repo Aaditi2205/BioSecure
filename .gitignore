@@ -1,0 +1,13 @@
+build/
+work/
+outputs/
+sdkconfig
+managed_components/
+*.obj
+*.db
+*.events
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.env
+AGENTS.md
