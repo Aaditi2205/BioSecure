@@ -1,0 +1,11 @@
+#include "esp_uart_transport.hpp"
+#include "esp_timer.h"
+#include <array>
+
+namespace biosecure::platform {
+EspUartTransport::~EspUartTransport(){if(initialized_)uart_driver_delete(config_.port);}
+bool EspUartTransport::initialize(){uart_config_t c{};c.baud_rate=config_.baud;c.data_bits=UART_DATA_8_BITS;c.parity=UART_PARITY_DISABLE;c.stop_bits=UART_STOP_BITS_1;c.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;c.source_clk=UART_SCLK_DEFAULT;if(uart_param_config(config_.port,&c)!=ESP_OK)return false;if(uart_set_pin(config_.port,config_.tx_pin,config_.rx_pin,UART_PIN_NO_CHANGE,UART_PIN_NO_CHANGE)!=ESP_OK)return false;if(uart_driver_install(config_.port,config_.rx_buffer,0,0,nullptr,0)!=ESP_OK)return false;initialized_=true;return true;}
+bool EspUartTransport::write(const std::uint8_t* data,std::size_t size){if(!initialized_||!data||size==0)return false;uart_flush_input(config_.port);int written=uart_write_bytes(config_.port,data,size);return written==static_cast<int>(size)&&uart_wait_tx_done(config_.port,pdMS_TO_TICKS(100))==ESP_OK;}
+bool EspUartTransport::readExact(std::uint8_t* out,std::size_t size,std::int64_t deadline){std::size_t received=0;while(received<size){auto remaining=deadline-esp_timer_get_time();if(remaining<=0)return false;auto ticks=pdMS_TO_TICKS(static_cast<std::uint32_t>((remaining+999)/1000));int n=uart_read_bytes(config_.port,out+received,size-received,ticks?ticks:1);if(n<0)return false;received+=static_cast<std::size_t>(n);}return true;}
+bool EspUartTransport::readPacket(std::vector<std::uint8_t>& data,std::chrono::milliseconds timeout){data.clear();auto deadline=esp_timer_get_time()+timeout.count()*1000;std::array<std::uint8_t,r307::kFixedPrefixSize> prefix{};std::uint8_t previous=0,current=0;bool found=false;while(esp_timer_get_time()<deadline){if(!readExact(&current,1,deadline))return false;if(previous==0xEF&&current==0x01){prefix[0]=previous;prefix[1]=current;found=true;break;}previous=current;}if(!found||!readExact(prefix.data()+2,prefix.size()-2,deadline))return false;std::uint16_t length=(std::uint16_t(prefix[7])<<8)|prefix[8];if(length<2||length-2>r307::kMaxPayloadSize)return false;data.assign(prefix.begin(),prefix.end());auto old=data.size();data.resize(old+length);if(!readExact(data.data()+old,length,deadline)){data.clear();return false;}return true;}
+}
