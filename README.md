@@ -1,6 +1,5 @@
 # BioSecure
 
-[![CI](https://github.com/OWNER/BioSecure/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/BioSecure/actions/workflows/ci.yml)
 
 BioSecure is an engineering reference for an offline-first ESP32-S3 fingerprint
 access/attendance device. It emphasizes protocol correctness, bounded concurrency,
