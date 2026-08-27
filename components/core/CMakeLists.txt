@@ -1,0 +1,6 @@
+if(COMMAND idf_component_register)
+  idf_component_register(SRCS "state_machine.cpp" "attendance.cpp" "durable_log.cpp" "backoff.cpp" INCLUDE_DIRS "include" REQUIRES mbedtls)
+else()
+  add_library(biosecure_core state_machine.cpp attendance.cpp durable_log.cpp backoff.cpp)
+  target_include_directories(biosecure_core PUBLIC include)
+endif()
