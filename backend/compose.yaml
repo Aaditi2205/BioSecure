@@ -1,0 +1,10 @@
+services:
+  api:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      BIOSECURE_DB_PATH: /data/biosecure.db
+    volumes: ["biosecure-data:/data"]
+    restart: unless-stopped
+volumes:
+  biosecure-data: {}
