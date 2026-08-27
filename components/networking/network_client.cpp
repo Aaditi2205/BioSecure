@@ -1,0 +1,16 @@
+#include "network_client.hpp"
+#include "esp_crt_bundle.h"
+#include "esp_event.h"
+#include "esp_http_client.h"
+#include "esp_log.h"
+#include "esp_netif.h"
+#include "esp_wifi.h"
+#include "nvs_flash.h"
+#include <cstring>
+#include <vector>
+namespace biosecure::networking {
+namespace {constexpr char kTag[]="NetworkClient";bool ip_ready=false;void event(void*,esp_event_base_t base,int32_t id,void*){if(base==WIFI_EVENT&&id==WIFI_EVENT_STA_START)esp_wifi_connect();else if(base==WIFI_EVENT&&id==WIFI_EVENT_STA_DISCONNECTED){ip_ready=false;esp_wifi_connect();}else if(base==IP_EVENT&&id==IP_EVENT_STA_GOT_IP)ip_ready=true;}esp_err_t http_event(esp_http_client_event_t* e){if(e->event_id==HTTP_EVENT_ON_DATA&&e->user_data){auto* response=static_cast<std::string*>(e->user_data);if(response->size()+e->data_len<=512)response->append(static_cast<const char*>(e->data),e->data_len);}return ESP_OK;}}
+bool NetworkClient::initialize(){if(config_.ssid.empty()||config_.ssid.size()>=32||config_.attendance_url.rfind("https://",0)!=0)return false;if(esp_netif_init()!=ESP_OK)return false;if(esp_event_loop_create_default()!=ESP_OK)return false;esp_netif_create_default_wifi_sta();wifi_init_config_t init=WIFI_INIT_CONFIG_DEFAULT();if(esp_wifi_init(&init)!=ESP_OK)return false;esp_event_handler_register(WIFI_EVENT,ESP_EVENT_ANY_ID,&event,nullptr);esp_event_handler_register(IP_EVENT,IP_EVENT_STA_GOT_IP,&event,nullptr);wifi_config_t wifi{};std::memcpy(wifi.sta.ssid,config_.ssid.data(),config_.ssid.size());if(config_.password.size()>=sizeof(wifi.sta.password))return false;std::memcpy(wifi.sta.password,config_.password.data(),config_.password.size());wifi.sta.threshold.authmode=WIFI_AUTH_WPA2_PSK;wifi.sta.pmf_cfg.capable=true;wifi.sta.pmf_cfg.required=false;return esp_wifi_set_mode(WIFI_MODE_STA)==ESP_OK&&esp_wifi_set_config(WIFI_IF_STA,&wifi)==ESP_OK&&esp_wifi_start()==ESP_OK;}
+bool NetworkClient::connected()const{return ip_ready;}
+SubmitResult NetworkClient::submit(const AttendanceEvent& e){if(!connected())return SubmitResult::Offline;std::string response;esp_http_client_config_t c{};c.url=config_.attendance_url.c_str();c.timeout_ms=config_.request_timeout_ms;c.crt_bundle_attach=esp_crt_bundle_attach;c.event_handler=http_event;c.user_data=&response;c.transport_type=HTTP_TRANSPORT_OVER_SSL;auto client=esp_http_client_init(&c);if(!client)return SubmitResult::TlsError;auto body=e.canonicalJson();esp_http_client_set_method(client,HTTP_METHOD_POST);esp_http_client_set_header(client,"Content-Type","application/json");esp_http_client_set_header(client,"Idempotency-Key",e.event_uuid.c_str());if(!config_.bearer_token.empty()){std::string auth="Bearer "+config_.bearer_token;esp_http_client_set_header(client,"Authorization",auth.c_str());}esp_http_client_set_post_field(client,body.data(),body.size());auto result=esp_http_client_perform(client);int status=esp_http_client_get_status_code(client);esp_http_client_cleanup(client);if(result==ESP_ERR_TIMEOUT)return SubmitResult::Timeout;if(result!=ESP_OK)return SubmitResult::TlsError;if(status<200||status>=300)return SubmitResult::Rejected;auto marker=std::string("\"event_uuid\":\"")+e.event_uuid+"\"";if(response.find(marker)==std::string::npos){ESP_LOGW(kTag,"server ACK rejected: UUID mismatch");return SubmitResult::InvalidResponse;}resetBackoff();return SubmitResult::Acknowledged;}
+}
