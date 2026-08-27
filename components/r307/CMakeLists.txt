@@ -1,0 +1,6 @@
+if(COMMAND idf_component_register)
+  idf_component_register(SRCS "r307_packet.cpp" "r307_driver.cpp" INCLUDE_DIRS "include" REQUIRES driver)
+else()
+  add_library(r307 r307_packet.cpp r307_driver.cpp)
+  target_include_directories(r307 PUBLIC include)
+endif()
